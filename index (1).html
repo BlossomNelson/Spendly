@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spendly — Cloud Waste Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0F1E2E;
+    --navy2:   #162436;
+    --teal:    #0E7C7B;
+    --teal2:   #12A09F;
+    --red:     #E05252;
+    --amber:   #E8913A;
+    --green:   #2EAF72;
+    --grey1:   #1C2E40;
+    --grey2:   #243547;
+    --grey3:   #2F4258;
+    --text:    #E8EDF2;
+    --text2:   #8FA3B8;
+    --text3:   #5C7A96;
+    --border:  rgba(255,255,255,0.07);
+    --card-bg: rgba(255,255,255,0.04);
+  }
+
+  body.light {
+    --navy:    #F4F7FA;
+    --navy2:   #EAF0F6;
+    --teal:    #0A6968;
+    --teal2:   #0E7C7B;
+    --red:     #C94040;
+    --amber:   #C47820;
+    --green:   #1E8F5A;
+    --grey1:   #E2EAF2;
+    --grey2:   #D5E2EE;
+    --grey3:   #B8CCDE;
+    --text:    #0F1E2E;
+    --text2:   #3A5570;
+    --text3:   #6B8EAA;
+    --border:  rgba(0,0,0,0.08);
+    --card-bg: rgba(0,0,0,0.03);
+  }
+
+  body.light .summary-panel {
+    background: linear-gradient(135deg, #E2EAF2 0%, #D5E2EE 100%);
+  }
+
+  body.light .upload-zone {
+    background: rgba(0,0,0,0.02);
+  }
+
+  body.light ::-webkit-scrollbar-track { background: #F4F7FA; }
+  body.light ::-webkit-scrollbar-thumb { background: #B8CCDE; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--navy);
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--teal2); }
+  .header-tag {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text3);
+    background: var(--grey1);
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── MAIN ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 48px 40px; }
+
+  /* ── UPLOAD STATE ── */
+  #upload-state { text-align: center; padding: 80px 0; }
+  .upload-hero { font-size: 38px; font-weight: 700; letter-spacing: -1px; line-height: 1.2; margin-bottom: 16px; }
+  .upload-hero span { color: var(--teal2); }
+  .upload-sub { font-size: 16px; color: var(--text2); margin-bottom: 48px; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--grey3);
+    border-radius: 16px;
+    padding: 56px 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 520px;
+    margin: 0 auto;
+    background: var(--card-bg);
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--teal2); background: rgba(14,124,123,0.06); }
+  .upload-icon { font-size: 40px; margin-bottom: 16px; }
+  .upload-zone p { color: var(--text2); font-size: 15px; }
+  .upload-zone strong { color: var(--teal2); }
+  #file-input { display: none; }
+
+  /* ── REPORT STATE ── */
+  #report-state { display: none; }
+
+  /* ── TOP BAR ── */
+  .report-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .report-title { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .report-meta { font-size: 13px; color: var(--text3); }
+  .btn-reset {
+    font-size: 13px;
+    color: var(--text2);
+    background: var(--grey1);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-reset:hover { background: var(--grey2); color: var(--text); }
+
+  /* ── SUMMARY PANEL ── */
+  .summary-panel {
+    background: linear-gradient(135deg, var(--grey1) 0%, var(--grey2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--teal2));
+  }
+  .summary-label { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .waste-total { font-size: 56px; font-weight: 700; letter-spacing: -2px; color: var(--text); line-height: 1; margin-bottom: 4px; }
+  .waste-total span { color: var(--red); }
+  .waste-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } }
+
+  .summary-stat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--text2); }
+  .stat-financial { color: var(--red); }
+  .stat-operational { color: var(--amber); }
+  .stat-process { color: var(--teal2); }
+  .stat-clean { color: var(--green); }
+
+  /* ── SECTION TITLES ── */
+  .section-title {
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── BEHAVIOUR FLAGS ── */
+  .flags-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 40px; }
+  .flag-card {
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .flag-card.high { background: rgba(224,82,82,0.08); border-color: rgba(224,82,82,0.25); }
+  .flag-card.medium { background: rgba(232,145,58,0.08); border-color: rgba(232,145,58,0.25); }
+  .flag-card.low { background: rgba(14,124,123,0.08); border-color: rgba(14,124,123,0.25); }
+  .flag-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+  .flag-card.high .flag-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .flag-card.medium .flag-dot { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  .flag-card.low .flag-dot { background: var(--teal2); }
+  .flag-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .flag-desc { font-size: 12px; color: var(--text2); }
+  .flag-count { font-size: 11px; font-family: 'DM Mono', monospace; margin-top: 6px; }
+  .flag-card.high .flag-count { color: var(--red); }
+  .flag-card.medium .flag-count { color: var(--amber); }
+  .flag-card.low .flag-count { color: var(--teal2); }
+
+  /* ── RESOURCE CARDS ── */
+  .resources-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+
+  .resource-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .resource-card:hover { border-color: rgba(255,255,255,0.12); }
+  .resource-card.high { border-left: 3px solid var(--red); }
+  .resource-card.medium { border-left: 3px solid var(--amber); }
+  .resource-card.low { border-left: 3px solid var(--teal2); }
+
+  .resource-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .resource-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+  .resource-name { font-size: 14px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .resource-type { font-size: 12px; color: var(--text3); }
+  .resource-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .resource-cost { font-size: 15px; font-weight: 600; color: var(--text); }
+  .severity-badge {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-high { background: rgba(224,82,82,0.15); color: var(--red); }
+  .badge-medium { background: rgba(232,145,58,0.15); color: var(--amber); }
+  .badge-low { background: rgba(14,124,123,0.15); color: var(--teal2); }
+  .chevron { color: var(--text3); font-size: 12px; transition: transform 0.2s; }
+  .resource-card.open .chevron { transform: rotate(180deg); }
+
+  .resource-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .resource-card.open .resource-body { display: block; }
+
+  .explain-box {
+    background: rgba(14,124,123,0.08);
+    border: 1px solid rgba(14,124,123,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .explain-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--teal2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+  .metrics-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .metric-chip {
+    background: var(--grey1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .metric-chip span { color: var(--text3); margin-right: 4px; }
+  .metric-chip strong { color: var(--text); font-weight: 500; }
+
+  .category-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .cat-financial { background: rgba(224,82,82,0.12); color: var(--red); }
+  .cat-operational { background: rgba(232,145,58,0.12); color: var(--amber); }
+  .cat-process { background: rgba(14,124,123,0.12); color: var(--teal2); }
+
+  .confidence-line { font-size: 12px; color: var(--text3); margin-top: 10px; }
+  .confidence-line strong { color: var(--text2); }
+
+  /* ── HEALTHY RESOURCES ── */
+  .healthy-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-bottom: 40px; }
+  .healthy-card {
+    background: rgba(46,175,114,0.05);
+    border: 1px solid rgba(46,175,114,0.15);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .healthy-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+  .healthy-name { font-size: 13px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text); margin-bottom: 2px; }
+  .healthy-status { font-size: 11px; color: var(--green); }
+  .healthy-cost { font-size: 12px; color: var(--text3); margin-left: auto; }
+
+  /* ── PROGRESS VIEW ── */
+  .progress-section { margin-bottom: 40px; }
+  .progress-empty { color: var(--text3); font-size: 14px; font-style: italic; padding: 20px 0; }
+
+  .run-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .run-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .run-date { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text2); }
+  .run-waste { font-size: 15px; font-weight: 600; color: var(--text); }
+  .run-delta { font-size: 12px; font-family: 'DM Mono', monospace; }
+  .delta-up { color: var(--red); }
+  .delta-down { color: var(--green); }
+  .delta-base { color: var(--text3); }
+  .run-status { font-size: 12px; color: var(--text2); flex: 1; text-align: right; }
+
+  .run-body {
+    display: none;
+    padding: 0 18px 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .run-card.open .run-body { display: block; }
+  .run-detail-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .run-detail-item { font-size: 12px; color: var(--text2); }
+  .run-detail-item strong { display: block; font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+
+  /* ── CHART ── */
+  .chart-wrap { margin: 20px 0 32px; background: var(--grey1); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  canvas { width: 100% !important; height: 180px !important; }
+
+  /* ── LOADING ── */
+  #loading {
+    display: none;
+    text-align: center;
+    padding: 80px 0;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--grey3);
+    border-top-color: var(--teal2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy); }
+  ::-webkit-scrollbar-thumb { background: var(--grey3); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">spend<span>ly</span></div>
+  <div class="header-tag">Cloud Waste Report</div>
+  <button id="theme-toggle" onclick="toggleTheme()" style="margin-left:auto; background:var(--grey1); border:1px solid var(--border); color:var(--text2); padding:6px 14px; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; transition:all 0.15s;" title="Toggle light/dark mode">☀️ Light</button>
+</header>
+
+<main>
+
+  <!-- UPLOAD STATE -->
+  <div id="upload-state">
+    <h1 class="upload-hero">Find out where your<br><span>cloud budget is going.</span></h1>
+    <p class="upload-sub">Upload your cloud resource dataset and get a complete waste report in seconds. No setup. No configuration.</p>
+    <div class="upload-zone" id="upload-zone">
+      <div class="upload-icon">☁️</div>
+      <p><strong>Drop your CSV file here</strong></p>
+      <p style="margin-top:8px; font-size:13px;">or click to browse</p>
+      <input type="file" id="file-input" accept=".csv">
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p style="color:var(--text2); font-size:14px;">Analysing your infrastructure…</p>
+  </div>
+
+  <!-- REPORT STATE -->
+  <div id="report-state">
+
+    <div class="report-topbar">
+      <div>
+        <div class="report-title">Waste Report</div>
+        <div class="report-meta" id="report-meta"></div>
+      </div>
+      <button class="btn-reset" id="btn-reset">↑ New Report</button>
+    </div>
+
+    <!-- SUMMARY PANEL -->
+    <div class="summary-panel">
+      <div class="summary-label">Total Confirmed Waste</div>
+      <div class="waste-total" id="waste-total">€0</div>
+      <div class="waste-subtitle" id="waste-subtitle"></div>
+      <div class="summary-grid">
+        <div class="summary-stat">
+          <div class="stat-value stat-financial" id="stat-financial">0</div>
+          <div class="stat-label">Financial Waste</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-value stat-operational" id="stat-operational">0</div>
+          <div class="stat-label">Operational Waste</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-value stat-process" id="stat-process">0</div>
+          <div class="stat-label">Process Waste</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BEHAVIOUR FLAGS -->
+    <div class="section-title">Behaviour Flags</div>
+    <div class="flags-grid" id="flags-grid"></div>
+
+    <!-- FLAGGED RESOURCES -->
+    <div class="section-title">Flagged Resources</div>
+    <div class="resources-list" id="resources-list"></div>
+
+    <!-- HEALTHY RESOURCES -->
+    <div class="section-title">Healthy Resources</div>
+    <div class="healthy-list" id="healthy-list"></div>
+
+    <!-- PROGRESS VIEW -->
+    <div class="section-title">Progress View</div>
+    <div class="progress-section">
+      <div id="chart-container" style="display:none;">
+        <div class="chart-wrap"><canvas id="waste-chart"></canvas></div>
+      </div>
+      <div id="runs-list"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ── STATE ──────────────────────────────────────────────────────────
+let auditHistory = JSON.parse(localStorage.getItem('spendly_history') || '[]');
+let chartInstance = null;
+
+// ── THRESHOLDS (Scout's heuristics) ───────────────────────────────
+const CPU_UNDERUTIL    = 15;   // % — below this = underutilised
+const MEMORY_UNDERUTIL = 20;   // %
+const INACTIVE_DAYS    = 30;   // days since last active
+const OVERPROV_CPU     = 10;   // % CPU vs tier cost ratio
+const MIN_WASTE_COST   = 30;   // € — minimum to flag
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i] || '');
+    return obj;
+  });
+}
+
+function daysSince(dateStr) {
+  if (!dateStr) return 9999;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return 9999;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+function formatEur(n) {
+  return '€' + Math.round(n).toLocaleString('en-IE');
+}
+
+function confidenceLabel(score) {
+  const s = parseFloat(score);
+  if (s >= 9.0) return 'Scout is highly confident in this finding.';
+  if (s >= 7.5) return 'Scout is confident in this finding.';
+  if (s >= 5.0) return 'Scout has moderate confidence in this finding.';
+  return 'Scout flagged this as worth investigating further.';
+}
+
+// ── LATEST MONTH ONLY ─────────────────────────────────────────────
+function getLatestMonth(rows) {
+  const months = [...new Set(rows.map(r => r.audit_month))].sort();
+  return months[months.length - 1];
+}
+
+// ── SCOUT HEURISTICS ──────────────────────────────────────────────
+function classify(resource) {
+  const cpu    = parseFloat(resource.cpu_percent) || 0;
+  const mem    = parseFloat(resource.memory_percent) || 0;
+  const cost   = parseFloat(resource.monthly_cost_eur) || 0;
+  const hrs    = parseFloat(resource.active_hours_per_day) || 0;
+  const inact  = daysSince(resource.last_active_date);
+  const isDup  = resource.duplicate_flag === 'yes';
+  const noOwn  = resource.owner_assigned === 'no';
+  const env    = (resource.environment || '').toLowerCase();
+  const req    = parseInt(resource.request_volume) || 0;
+  const name   = (resource.resource_name || '').toLowerCase();
+
+  // Resources with zero cost are resolved/decommissioned — always clean
+  if (cost === 0) {
+    return { ...resource, isWaste: false, flags: [], category: null,
+             severity: 'LOW', heuristics: [], explanation: '', confidence: '10.0' };
+  }
+
+  // Low-cost monitoring/utility resources — not worth flagging
+  const isMonitoring = name.includes('monitor') || name.includes('agent') || name.includes('cloudwatch');
+  if (isMonitoring && cost < 50) {
+    return { ...resource, isWaste: false, flags: [], category: null,
+             severity: 'LOW', heuristics: [], explanation: '', confidence: '9.5' };
+  }
+
+  const flags = [];
+  let category = null;
+  let severity = 'LOW';
+  let heuristics = [];
+  let explanation = '';
+  let confidence = 5.0;
+
+  // ── OVER-PROVISIONING (operational waste)
+  // High cost staging/dev DB or compute with very low utilisation
+  const isOverprov = cost > 250 && cpu < 8 && (env === 'staging' || env === 'development')
+                     && !name.includes('ml') && !name.includes('gpu');
+  if (isOverprov) {
+    flags.push('over-provisioned');
+    category = 'operational';
+    heuristics.push('over_provisioning');
+    explanation = `This ${env} resource is provisioned at ${formatEur(cost)}/month but running at only ${cpu}% CPU utilisation. It is significantly over-sized for the workload it handles.`;
+    severity = 'HIGH';
+    confidence = 9.1;
+  }
+
+  // ── ALWAYS-ON DEV GPU (financial waste)
+  // Expensive GPU/ML boxes in dev running 20+ hrs with near-zero compute work
+  const isAlwaysOnGpu = (name.includes('ml') || name.includes('gpu') || name.includes('training'))
+                        && env === 'development' && hrs >= 18 && cpu < 12;
+  if (isAlwaysOnGpu) {
+    flags.push('always-on-dev');
+    if (!category) category = 'financial';
+    heuristics.push('underutilisation');
+    explanation = `This GPU development environment runs ${hrs} hours per day at only ${cpu}% CPU utilisation, costing ${formatEur(cost)}/month. GPU instances should be stopped when training is not actively running.`;
+    severity = 'HIGH';
+    confidence = Math.max(confidence, 9.4);
+  }
+
+  // ── INACTIVITY (financial waste)
+  // Zero or near-zero activity, no requests, minimal hours
+  const isInactive = (req === 0 && hrs < 1 && cpu < 2 && cost > 30);
+  if (isInactive && !flags.includes('over-provisioned')) {
+    flags.push('inactive');
+    if (!category) category = 'financial';
+    heuristics.push('inactivity_over_time');
+    if (!explanation) explanation = `This resource has recorded no meaningful activity — zero request volume, ${hrs} active hours per day — but continues to cost ${formatEur(cost)}/month.`;
+    severity = cost > 150 ? 'HIGH' : 'MEDIUM';
+    confidence = Math.max(confidence, cost > 150 ? 9.3 : 8.1);
+  }
+
+  // ── UNDERUTILISATION (financial waste)
+  // Dev/staging resources with consistently low CPU and non-trivial cost
+  const isUnderutilised = cpu < 5 && cost > 60 && env !== 'production'
+                          && !flags.includes('always-on-dev') && !flags.includes('inactive');
+  if (isUnderutilised) {
+    flags.push('underutilised');
+    if (!category) category = 'financial';
+    heuristics.push('underutilisation');
+    if (!explanation) explanation = `This resource runs at ${cpu}% CPU on average while costing ${formatEur(cost)}/month. Usage levels do not justify the current spend.`;
+    if (severity === 'LOW') severity = cpu < 2 ? 'HIGH' : 'MEDIUM';
+    confidence = Math.max(confidence, cpu < 2 ? 9.0 : 7.8);
+  }
+
+  // ── DUPLICATE DEPLOYMENT (process waste)
+  if (isDup && cost > 0 && !flags.includes('inactive')) {
+    flags.push('duplicate');
+    if (!category) category = 'process';
+    heuristics.push('underutilisation');
+    if (!explanation) explanation = `This resource is one of multiple identical deployments running simultaneously. Duplicate deployments indicate a gap in resource lifecycle governance — no policy exists to prevent redundant creation.`;
+    if (severity === 'LOW') severity = 'MEDIUM';
+    confidence = Math.max(confidence, 8.6);
+  }
+
+  // ── NO OWNER (process waste) — only if already flagged for something else
+  if (noOwn && flags.length > 0 && !flags.includes('no-owner')) {
+    flags.push('no-owner');
+    if (!category) category = 'process';
+  }
+
+  const isWaste = flags.length > 0;
+
+  return {
+    ...resource,
+    isWaste,
+    flags,
+    category: category || 'financial',
+    severity,
+    heuristics,
+    explanation,
+    confidence: confidence.toFixed(1),
+  };
+}
+
+// ── BEHAVIOUR FLAG DEFINITIONS ────────────────────────────────────
+const FLAG_DEFS = {
+  'always-on-dev':  { name: 'Always-On Dev Environment', desc: 'Development server running 20+ hours per day', severity: 'high' },
+  'inactive':       { name: 'Inactive Resource', desc: 'No meaningful activity for 30+ days', severity: 'high' },
+  'underutilised':  { name: 'Underutilised Resource', desc: 'CPU and memory well below operational thresholds', severity: 'medium' },
+  'over-provisioned': { name: 'Over-Provisioned', desc: 'Enterprise-scale resource with minimal workload', severity: 'high' },
+  'duplicate':      { name: 'Duplicate Deployment', desc: 'Multiple identical resources running simultaneously', severity: 'medium' },
+  'no-owner':       { name: 'Unowned Resource', desc: 'No accountable owner assigned', severity: 'low' },
+};
+
+// ── RENDER ────────────────────────────────────────────────────────
+function renderReport(rows, filename) {
+  // Detect multi-month (historical) vs single-month upload
+  const months = [...new Set(rows.map(r => r.audit_month))].sort();
+  const isHistorical = months.length > 1;
+
+  if (isHistorical) {
+    // Historical upload: build run history from all months, display latest month report
+    months.forEach(month => {
+      const monthRows = rows.filter(r => r.audit_month === month);
+      // Get one row per unique resource for this month
+      const uniqueResources = Object.values(
+        monthRows.reduce((acc, r) => { acc[r.resource_name] = r; return acc; }, {})
+      );
+      const classified = uniqueResources.map(classify);
+      const wasteful = classified.filter(r => r.isWaste);
+      const clean    = classified.filter(r => !r.isWaste);
+      const totalWaste = wasteful.reduce((s,r) => s + parseFloat(r.monthly_cost_eur), 0);
+      const catCounts = { financial:0, operational:0, process:0 };
+      wasteful.forEach(r => { if (catCounts[r.category]!==undefined) catCounts[r.category]++; });
+      const flagCounts = {};
+      wasteful.forEach(r => r.flags.forEach(f => { flagCounts[f]=(flagCounts[f]||0)+1; }));
+      // Only store if not already in history
+      if (!auditHistory.find(h => h.date === month)) {
+        auditHistory.push({
+          date: month,
+          totalWaste: Math.round(totalWaste),
+          flaggedCount: wasteful.length,
+          cleanCount: clean.length,
+          categories: catCounts,
+          newFlags: Object.keys(flagCounts).length,
+          filename
+        });
+      }
+    });
+    auditHistory.sort((a,b) => a.date.localeCompare(b.date));
+    localStorage.setItem('spendly_history', JSON.stringify(auditHistory));
+  }
+
+  // Always display report for the latest month
+  const latestMonth = months[months.length - 1];
+  const latestRows  = rows.filter(r => r.audit_month === latestMonth);
+  // One row per unique resource
+  const uniqueLatest = Object.values(
+    latestRows.reduce((acc, r) => { acc[r.resource_name] = r; return acc; }, {})
+  );
+
+  const classified = uniqueLatest.map(classify);
+  const wasteful   = classified.filter(r => r.isWaste);
+  const clean      = classified.filter(r => !r.isWaste);
+
+  const totalWaste = wasteful.reduce((s, r) => s + parseFloat(r.monthly_cost_eur), 0);
+  const annual     = totalWaste * 12;
+
+  const catCounts = { financial: 0, operational: 0, process: 0 };
+  wasteful.forEach(r => { if (catCounts[r.category] !== undefined) catCounts[r.category]++; });
+
+  // Meta
+  document.getElementById('report-meta').textContent =
+    `${filename}  ·  ${latestMonth}  ·  ${classified.length} resources audited${isHistorical ? "  ·  Historical import: " + months.length + " months loaded" : ""}`;
+
+  // Waste total
+  document.getElementById('waste-total').innerHTML =
+    `<span>${formatEur(totalWaste)}</span>/mo`;
+  document.getElementById('waste-subtitle').textContent =
+    `${formatEur(annual)} projected annually · ${wasteful.length} of ${classified.length} resources flagged`;
+
+  document.getElementById('stat-financial').textContent  = catCounts.financial;
+  document.getElementById('stat-operational').textContent = catCounts.operational;
+  document.getElementById('stat-process').textContent    = catCounts.process;
+
+  // Behaviour flags
+  const flagCounts = {};
+  wasteful.forEach(r => r.flags.forEach(f => { flagCounts[f] = (flagCounts[f]||0)+1; }));
+  const flagsGrid = document.getElementById('flags-grid');
+  flagsGrid.innerHTML = '';
+  Object.entries(flagCounts).forEach(([key, count]) => {
+    const def = FLAG_DEFS[key] || { name: key, desc: '', severity: 'low' };
+    flagsGrid.innerHTML += `
+      <div class="flag-card ${def.severity}">
+        <div class="flag-dot"></div>
+        <div>
+          <div class="flag-name">${def.name}</div>
+          <div class="flag-desc">${def.desc}</div>
+          <div class="flag-count">${count} resource${count>1?'s':''} affected</div>
+        </div>
+      </div>`;
+  });
+
+  // Flagged resources — sorted by cost desc
+  const sorted = [...wasteful].sort((a,b) => parseFloat(b.monthly_cost_eur) - parseFloat(a.monthly_cost_eur));
+  const resList = document.getElementById('resources-list');
+  resList.innerHTML = '';
+  sorted.forEach((r, i) => {
+    const badgeClass = r.severity === 'HIGH' ? 'badge-high' : r.severity === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+    const catClass   = `cat-${r.category}`;
+    const div = document.createElement('div');
+    div.className = `resource-card ${r.severity.toLowerCase()}`;
+    div.innerHTML = `
+      <div class="resource-header" onclick="toggleCard(this)">
+        <div class="resource-left">
+          <div>
+            <div class="resource-name">${r.resource_name}</div>
+            <div class="resource-type">${r.resource_type} · ${r.environment}</div>
+          </div>
+        </div>
+        <div class="resource-right">
+          <div class="resource-cost">${formatEur(parseFloat(r.monthly_cost_eur))}/mo</div>
+          <span class="severity-badge ${badgeClass}">${r.severity}</span>
+          <span class="chevron">▾</span>
+        </div>
+      </div>
+      <div class="resource-body">
+        <div class="explain-box">
+          <div class="explain-label">Why this was flagged</div>
+          ${r.explanation}
+        </div>
+        <div class="metrics-row">
+          <div class="metric-chip"><span>CPU</span><strong>${r.cpu_percent}%</strong></div>
+          <div class="metric-chip"><span>Memory</span><strong>${r.memory_percent}%</strong></div>
+          <div class="metric-chip"><span>Monthly cost</span><strong>${formatEur(parseFloat(r.monthly_cost_eur))}</strong></div>
+          <div class="metric-chip"><span>Active hrs/day</span><strong>${r.active_hours_per_day}</strong></div>
+          <div class="metric-chip"><span>Last active</span><strong>${r.last_active_date}</strong></div>
+          <div class="metric-chip"><span>Age</span><strong>${r.deployment_age_days} days</strong></div>
+        </div>
+        <span class="category-tag ${catClass}">${r.category} waste</span>
+        <div class="confidence-line"><strong>Confidence:</strong> ${confidenceLabel(r.confidence)}</div>
+      </div>`;
+    resList.appendChild(div);
+  });
+
+  // Healthy resources
+  const healthyList = document.getElementById('healthy-list');
+  healthyList.innerHTML = '';
+  clean.forEach(r => {
+    healthyList.innerHTML += `
+      <div class="healthy-card">
+        <div class="healthy-dot"></div>
+        <div>
+          <div class="healthy-name">${r.resource_name}</div>
+          <div class="healthy-status">Operating within expected thresholds</div>
+        </div>
+        <div class="healthy-cost">${formatEur(parseFloat(r.monthly_cost_eur))}/mo</div>
+      </div>`;
+  });
+
+  // Save to history (single-month uploads only — historical already handled above)
+  if (!isHistorical) {
+    const runEntry = {
+      date: latestMonth,
+      totalWaste: Math.round(totalWaste),
+      flaggedCount: wasteful.length,
+      cleanCount: clean.length,
+      categories: catCounts,
+      newFlags: Object.keys(flagCounts).length,
+      filename
+    };
+    auditHistory = auditHistory.filter(r => r.date !== latestMonth);
+    auditHistory.push(runEntry);
+    auditHistory.sort((a,b) => a.date.localeCompare(b.date));
+    localStorage.setItem('spendly_history', JSON.stringify(auditHistory));
+  }
+
+  renderProgress();
+}
+
+function renderProgress() {
+  const runsList = document.getElementById('runs-list');
+  const chartContainer = document.getElementById('chart-container');
+
+  if (auditHistory.length === 0) {
+    runsList.innerHTML = '<p class="progress-empty">No audit runs recorded yet. Upload a dataset to begin.</p>';
+    chartContainer.style.display = 'none';
+    return;
+  }
+
+  // Chart
+  chartContainer.style.display = 'block';
+  const labels = auditHistory.map(r => r.date);
+  const data   = auditHistory.map(r => r.totalWaste);
+
+  if (chartInstance) chartInstance.destroy();
+  const ctx = document.getElementById('waste-chart').getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Monthly Waste (€)',
+        data,
+        borderColor: '#0E7C7B',
+        backgroundColor: 'rgba(14,124,123,0.12)',
+        borderWidth: 2,
+        pointBackgroundColor: '#12A09F',
+        pointRadius: 5,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `€${ctx.parsed.y.toLocaleString('en-IE')}/mo`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#5C7A96', font: { family: 'DM Mono', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#5C7A96', font: { family: 'DM Mono', size: 11 }, callback: v => '€'+v.toLocaleString('en-IE') }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+
+  // Run cards
+  const reversed = [...auditHistory].reverse();
+  runsList.innerHTML = '';
+  reversed.forEach((run, i) => {
+    const prev = auditHistory[auditHistory.indexOf(run) - 1];
+    let deltaHTML = '<span class="run-delta delta-base">Baseline</span>';
+    if (prev) {
+      const diff = run.totalWaste - prev.totalWaste;
+      if (diff > 0) deltaHTML = `<span class="run-delta delta-up">▲ €${Math.abs(diff).toLocaleString('en-IE')}</span>`;
+      else if (diff < 0) deltaHTML = `<span class="run-delta delta-down">▼ €${Math.abs(diff).toLocaleString('en-IE')}</span>`;
+      else deltaHTML = `<span class="run-delta delta-base">No change</span>`;
+    }
+    const statusText = i === 0
+      ? `${run.flaggedCount} flagged · ${run.cleanCount} healthy`
+      : `${run.flaggedCount} flagged · ${run.cleanCount} healthy`;
+
+    const card = document.createElement('div');
+    card.className = 'run-card';
+    card.innerHTML = `
+      <div class="run-header" onclick="toggleCard(this)">
+        <div class="run-date">${run.date}</div>
+        <div class="run-waste">${formatEur(run.totalWaste)}/mo</div>
+        ${deltaHTML}
+        <div class="run-status">${statusText}</div>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="run-body">
+        <div class="run-detail-grid">
+          <div class="run-detail-item"><strong style="color:var(--red)">${run.categories.financial}</strong>Financial waste items</div>
+          <div class="run-detail-item"><strong style="color:var(--amber)">${run.categories.operational}</strong>Operational waste items</div>
+          <div class="run-detail-item"><strong style="color:var(--teal2)">${run.categories.process}</strong>Process waste items</div>
+        </div>
+      </div>`;
+    runsList.appendChild(card);
+  });
+}
+
+// ── TOGGLE CARDS ──────────────────────────────────────────────────
+function toggleCard(header) {
+  const card = header.closest('.resource-card, .run-card');
+  card.classList.toggle('open');
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────────────
+function processFile(file) {
+  if (!file || !file.name.endsWith('.csv')) {
+    alert('Please upload a CSV file.');
+    return;
+  }
+  document.getElementById('upload-state').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    setTimeout(() => {
+      const rows = parseCSV(e.target.result);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('report-state').style.display = 'block';
+      renderReport(rows, file.name);
+      window.scrollTo(0, 0);
+    }, 800);
+  };
+  reader.readAsText(file);
+}
+
+// ── EVENT LISTENERS ───────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => {
+  processFile(e.target.files[0]);
+});
+
+document.getElementById('upload-zone').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+
+document.getElementById('upload-zone').addEventListener('dragover', e => {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('drag');
+});
+
+document.getElementById('upload-zone').addEventListener('dragleave', () => {
+  document.getElementById('upload-zone').classList.remove('drag');
+});
+
+document.getElementById('upload-zone').addEventListener('drop', e => {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  processFile(e.dataTransfer.files[0]);
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  document.getElementById('report-state').style.display = 'none';
+  document.getElementById('upload-state').style.display = 'block';
+  document.getElementById('file-input').value = '';
+});
+
+// Load history on start
+renderProgress();
+
+// ── THEME TOGGLE ─────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  const btn = document.getElementById('theme-toggle');
+  btn.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+  localStorage.setItem('spendly_theme', isLight ? 'light' : 'dark');
+}
+
+// Apply saved theme
+if (localStorage.getItem('spendly_theme') === 'light') {
+  document.body.classList.add('light');
+  document.getElementById('theme-toggle').textContent = '🌙 Dark';
+}
+</script>
+</body>
+</html>
