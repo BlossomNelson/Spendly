@@ -384,6 +384,64 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── HEALTH SCORE ── */
+  .health-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+  .health-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+  .health-score-val {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .score-good { color: var(--green); }
+  .score-mid  { color: var(--amber); }
+  .score-low  { color: var(--red); }
+  .health-label { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .health-bar-track { height: 4px; background: var(--grey3); border-radius: 2px; margin-top: 12px; }
+  .health-bar-fill { height: 4px; border-radius: 2px; transition: width 1s ease; }
+
+  .accomplishment-banner {
+    background: linear-gradient(135deg, rgba(46,175,114,0.12), rgba(46,175,114,0.05));
+    border: 1px solid rgba(46,175,114,0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--green);
+    font-weight: 500;
+  }
+  .loss-banner {
+    background: linear-gradient(135deg, rgba(224,82,82,0.08), rgba(224,82,82,0.03));
+    border: 1px solid rgba(224,82,82,0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--red);
+    font-weight: 500;
+  }
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--navy); }
@@ -427,6 +485,24 @@
         <div class="report-meta" id="report-meta"></div>
       </div>
       <button class="btn-reset" id="btn-reset">↑ New Report</button>
+    </div>
+
+    <!-- OCTALYSIS BANNERS -->
+    <div id="octalysis-banners"></div>
+
+    <!-- HEALTH SCORE -->
+    <div class="health-row">
+      <div class="health-card">
+        <div class="health-label">Infrastructure Health Score</div>
+        <div class="health-score-val" id="health-score-val">--</div>
+        <div style="font-size:12px; color:var(--text3); margin-top:4px;" id="health-desc"></div>
+        <div class="health-bar-track"><div class="health-bar-fill" id="health-bar" style="width:0%"></div></div>
+      </div>
+      <div class="health-card">
+        <div class="health-label">Monthly Waste Trend</div>
+        <div class="health-score-val" id="trend-val" style="font-size:32px;">--</div>
+        <div style="font-size:12px; color:var(--text3); margin-top:4px;" id="trend-desc"></div>
+      </div>
     </div>
 
     <!-- SUMMARY PANEL -->
@@ -705,6 +781,9 @@ function renderReport(rows, filename) {
   const catCounts = { financial: 0, operational: 0, process: 0 };
   wasteful.forEach(r => { if (catCounts[r.category] !== undefined) catCounts[r.category]++; });
 
+  // Octalysis
+  renderOctalysis(wasteful, clean, totalWaste);
+
   // Meta
   document.getElementById('report-meta').textContent =
     `${filename}  ·  ${latestMonth}  ·  ${classified.length} resources audited${isHistorical ? "  ·  Historical import: " + months.length + " months loaded" : ""}`;
@@ -812,6 +891,88 @@ function renderReport(rows, filename) {
   }
 
   renderProgress();
+}
+
+// ── HEALTH SCORE ──────────────────────────────────────────────────
+function calcHealthScore(wasteful, clean) {
+  if (wasteful.length + clean.length === 0) return 0;
+  const total = wasteful.length + clean.length;
+  // Weighted: HIGH severity = -3, MEDIUM = -2, LOW = -1
+  let penalty = 0;
+  wasteful.forEach(r => {
+    if (r.severity === 'HIGH') penalty += 3;
+    else if (r.severity === 'MEDIUM') penalty += 2;
+    else penalty += 1;
+  });
+  const maxPenalty = total * 3;
+  const score = Math.max(0, Math.round(100 - (penalty / maxPenalty) * 100));
+  return score;
+}
+
+function renderOctalysis(wasteful, clean, totalWaste) {
+  const score = calcHealthScore(wasteful, clean);
+  const annual = totalWaste * 12;
+
+  // Health Score
+  const scoreEl  = document.getElementById('health-score-val');
+  const descEl   = document.getElementById('health-desc');
+  const barEl    = document.getElementById('health-bar');
+  scoreEl.textContent = score;
+  scoreEl.className = 'health-score-val ' + (score >= 70 ? 'score-good' : score >= 40 ? 'score-mid' : 'score-low');
+  descEl.textContent = score >= 70 ? 'Good standing' : score >= 40 ? 'Needs attention' : 'Critical — action required';
+  barEl.style.width = score + '%';
+  barEl.style.background = score >= 70 ? 'var(--green)' : score >= 40 ? 'var(--amber)' : 'var(--red)';
+
+  // Trend
+  const trendEl   = document.getElementById('trend-val');
+  const trendDesc = document.getElementById('trend-desc');
+  if (auditHistory.length >= 2) {
+    const last = auditHistory[auditHistory.length - 1];
+    const prev = auditHistory[auditHistory.length - 2];
+    const diff = last.totalWaste - prev.totalWaste;
+    if (diff < 0) {
+      trendEl.textContent = '↓ ' + formatEur(Math.abs(diff));
+      trendEl.style.color = 'var(--green)';
+      trendDesc.textContent = 'less waste than last month';
+    } else if (diff > 0) {
+      trendEl.textContent = '↑ ' + formatEur(diff);
+      trendEl.style.color = 'var(--red)';
+      trendDesc.textContent = 'more waste than last month';
+    } else {
+      trendEl.textContent = 'No change';
+      trendEl.style.color = 'var(--text3)';
+      trendDesc.textContent = 'same as last month';
+    }
+  } else {
+    trendEl.textContent = 'Baseline';
+    trendEl.style.color = 'var(--text3)';
+    trendDesc.textContent = 'first audit run';
+  }
+
+  // Octalysis banners
+  const bannersEl = document.getElementById('octalysis-banners');
+  bannersEl.innerHTML = '';
+
+  // Accomplishment — only show if waste genuinely decreased
+  if (auditHistory.length >= 2) {
+    const last = auditHistory[auditHistory.length - 1];
+    const prev = auditHistory[auditHistory.length - 2];
+    const diff = prev.totalWaste - last.totalWaste;
+    if (diff > 0) {
+      bannersEl.innerHTML += `
+        <div class="accomplishment-banner">
+          ✓&nbsp; You reduced waste by ${formatEur(diff)} this month. Your infrastructure is getting healthier.
+        </div>`;
+    }
+  }
+
+  // Loss Avoidance — always shown, framed as active ongoing loss
+  if (totalWaste > 0) {
+    bannersEl.innerHTML += `
+      <div class="loss-banner">
+        ⚠&nbsp; At current rates, Spendly will lose ${formatEur(annual)} this year to unresolved waste.
+      </div>`;
+  }
 }
 
 function renderProgress() {
