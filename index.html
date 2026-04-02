@@ -442,6 +442,58 @@
     font-weight: 500;
   }
 
+  /* ── ACTION BOX ── */
+  .action-box {
+    background: rgba(46,175,114,0.07);
+    border: 1px solid rgba(46,175,114,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .action-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .action-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .console-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 8px 14px;
+    background: var(--grey1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text2);
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .console-btn:hover { background: var(--grey2); color: var(--text); border-color: var(--teal2); }
+
+  /* ── 30-DAY PLAN ── */
+  .plan-section { margin-bottom: 40px; }
+  .plan-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .plan-week {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--teal2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    padding-top: 2px;
+    min-width: 56px;
+  }
+  .plan-action { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .plan-saving { font-size: 13px; color: var(--green); font-family: 'DM Mono', monospace; }
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--navy); }
@@ -538,6 +590,12 @@
     <div class="section-title">Healthy Resources</div>
     <div class="healthy-list" id="healthy-list"></div>
 
+    <!-- 30-DAY CLEAN-UP PLAN -->
+    <div class="section-title">30-Day Clean-Up Plan</div>
+    <div class="plan-section" id="plan-section">
+      <!-- populated dynamically -->
+    </div>
+
     <!-- PROGRESS VIEW -->
     <div class="section-title">Progress View</div>
     <div class="progress-section">
@@ -587,11 +645,59 @@ function formatEur(n) {
 }
 
 function confidenceLabel(score) {
-  const s = parseFloat(score);
-  if (s >= 9.0) return 'Scout is highly confident in this finding.';
-  if (s >= 7.5) return 'Scout is confident in this finding.';
-  if (s >= 5.0) return 'Scout has moderate confidence in this finding.';
-  return 'Scout flagged this as worth investigating further.';
+  return parseFloat(score).toFixed(1) + ' / 10';
+}
+
+function getActionPlan(r) {
+  const flags = r.flags || [];
+  const name = r.resource_name;
+  const cost = formatEur(parseFloat(r.monthly_cost_eur));
+
+  if (flags.includes('always_on_dev') || flags.includes('always-on-dev')) {
+    return `Schedule this resource to shut down automatically outside working hours. GPU and high-cost development instances should only run when actively being used. Set a startup/shutdown schedule or require manual activation before each session. Expected saving: ${cost}/month if stopped overnight and weekends.`;
+  } else if (flags.includes('inactivity_over_time') || flags.includes('inactive')) {
+    return `Verify whether this resource is still needed. If no team member can confirm an active use case, decommission it. Before deleting, take a final snapshot if the data may be needed later. This resource has not been active for an extended period and is costing ${cost}/month with nothing to show for it.`;
+  } else if (flags.includes('over-provisioned') || flags.includes('over_provisioning')) {
+    return `Downsize this resource to a tier that matches its actual workload. It is currently provisioned for a workload far larger than what it handles. Right-sizing to the next tier down could recover a significant portion of the ${cost}/month spend without any impact on performance.`;
+  } else if (flags.includes('duplicate') || flags.includes('duplicate_deployment')) {
+    return `Review whether all instances of this deployment are necessary. Consolidate to a single instance if the additional deployments serve no distinct purpose. Establish a naming and lifecycle policy to prevent duplicate deployments from being created in future.`;
+  } else if (flags.includes('underutilised') || flags.includes('underutilisation')) {
+    return `Review the current provisioning tier against actual usage. This resource is running well below capacity. Consider downsizing or consolidating with another resource serving a similar purpose.`;
+  } else if (flags.includes('no-owner') || flags.includes('no_owner')) {
+    return `Assign an owner to this resource immediately. Unowned resources have no accountable party to review or decommission them. If no team member can claim ownership, treat this as a candidate for decommissioning.`;
+  }
+  return `Review this resource with your infrastructure team and determine whether it is still required. If it is, ensure it has an assigned owner and a defined review date.`;
+}
+
+function getConsoleLink(r) {
+  const type = (r.resource_type || '').toLowerCase();
+  const name = r.resource_name || '';
+  const env = (r.environment || '').toLowerCase();
+
+  if (type.includes('ec2') || type.includes('gpu')) {
+    return { url: 'https://console.aws.amazon.com/ec2/v2/home#Instances', label: 'Open in AWS EC2 Console' };
+  } else if (type.includes('rds')) {
+    return { url: 'https://console.aws.amazon.com/rds/home#databases:', label: 'Open in AWS RDS Console' };
+  } else if (type.includes('s3') || type.includes('storage')) {
+    return { url: 'https://s3.console.aws.amazon.com/s3/buckets', label: 'Open in AWS S3 Console' };
+  } else if (type.includes('elasticache')) {
+    return { url: 'https://console.aws.amazon.com/elasticache/home', label: 'Open in AWS ElastiCache Console' };
+  } else if (type.includes('cloudfront')) {
+    return { url: 'https://console.aws.amazon.com/cloudfront/v3/home', label: 'Open in AWS CloudFront Console' };
+  } else if (type.includes('cloudwatch')) {
+    return { url: 'https://console.aws.amazon.com/cloudwatch/home', label: 'Open in AWS CloudWatch Console' };
+  } else if (type.includes('load balancer')) {
+    return { url: 'https://console.aws.amazon.com/ec2/v2/home#LoadBalancers:', label: 'Open in AWS Load Balancer Console' };
+  } else if (type.includes('ses') || type.includes('email')) {
+    return { url: 'https://console.aws.amazon.com/ses/home', label: 'Open in AWS SES Console' };
+  } else if (type.includes('sqs') || type.includes('lambda') || type.includes('queue')) {
+    return { url: 'https://console.aws.amazon.com/lambda/home', label: 'Open in AWS Lambda Console' };
+  } else if (type.includes('redshift')) {
+    return { url: 'https://console.aws.amazon.com/redshiftv2/home', label: 'Open in AWS Redshift Console' };
+  } else if (type.includes('elasticsearch') || type.includes('opensearch')) {
+    return { url: 'https://console.aws.amazon.com/esv3/home', label: 'Open in AWS OpenSearch Console' };
+  }
+  return { url: 'https://console.aws.amazon.com/', label: 'Open AWS Console' };
 }
 
 // ── LATEST MONTH ONLY ─────────────────────────────────────────────
@@ -784,6 +890,9 @@ function renderReport(rows, filename) {
   // Octalysis
   renderOctalysis(wasteful, clean, totalWaste);
 
+  // 30-day plan
+  renderPlan(wasteful);
+
   // Meta
   document.getElementById('report-meta').textContent =
     `${filename}  ·  ${latestMonth}  ·  ${classified.length} resources audited${isHistorical ? "  ·  Historical import: " + months.length + " months loaded" : ""}`;
@@ -844,6 +953,13 @@ function renderReport(rows, filename) {
           <div class="explain-label">Why this was flagged</div>
           ${r.explanation}
         </div>
+        <div class="action-box">
+          <div class="action-label">What to do</div>
+          <div class="action-text">${getActionPlan(r)}</div>
+          <a href="${getConsoleLink(r).url}" target="_blank" class="console-btn">
+            &#8599; ${getConsoleLink(r).label}
+          </a>
+        </div>
         <div class="metrics-row">
           <div class="metric-chip"><span>CPU</span><strong>${r.cpu_percent}%</strong></div>
           <div class="metric-chip"><span>Memory</span><strong>${r.memory_percent}%</strong></div>
@@ -853,7 +969,7 @@ function renderReport(rows, filename) {
           <div class="metric-chip"><span>Age</span><strong>${r.deployment_age_days} days</strong></div>
         </div>
         <span class="category-tag ${catClass}">${r.category} waste</span>
-        <div class="confidence-line"><strong>Confidence:</strong> ${confidenceLabel(r.confidence)}</div>
+        <div class="confidence-line"><strong>Confidence Score:</strong> ${confidenceLabel(r.confidence)}</div>
       </div>`;
     resList.appendChild(div);
   });
@@ -973,6 +1089,46 @@ function renderOctalysis(wasteful, clean, totalWaste) {
         ⚠&nbsp; At current rates, Spendly will lose ${formatEur(annual)} this year to unresolved waste.
       </div>`;
   }
+}
+
+function renderPlan(wasteful) {
+  const planEl = document.getElementById('plan-section');
+  if (!planEl) return;
+
+  // Sort by cost desc, take top 4 for the plan
+  const sorted = [...wasteful].sort((a,b) => parseFloat(b.monthly_cost_eur) - parseFloat(a.monthly_cost_eur));
+  const top4 = sorted.slice(0, 4);
+
+  const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+  const actions = top4.map(r => {
+    const cost = parseFloat(r.monthly_cost_eur);
+    const name = r.resource_name;
+    const env = r.environment;
+    const type = r.resource_type;
+
+    let action = '';
+    if (r.flags.includes('always_on_dev') || r.flags.includes('always-on-dev')) {
+      action = `Stop ${name} when not actively in use. This ${env} ${type} runs continuously with minimal workload.`;
+    } else if (r.flags.includes('inactivity_over_time') || r.flags.includes('inactive')) {
+      action = `Decommission ${name}. This resource has shown no meaningful activity but continues to incur charges.`;
+    } else if (r.flags.includes('over-provisioned') || r.flags.includes('over_provisioning')) {
+      action = `Right-size ${name}. It is provisioned well beyond its actual workload demands.`;
+    } else if (r.flags.includes('duplicate') || r.flags.includes('duplicate_deployment')) {
+      action = `Review and consolidate ${name}. Multiple identical deployments are running simultaneously.`;
+    } else {
+      action = `Review ${name} — costs ${formatEur(cost)}/month with low utilisation.`;
+    }
+    return { action, saving: cost };
+  });
+
+  planEl.innerHTML = actions.map((item, i) => `
+    <div class="plan-card">
+      <div class="plan-week">${weeks[i] || 'Action'}</div>
+      <div>
+        <div class="plan-action">${item.action}</div>
+        <div class="plan-saving">Estimated saving: ${formatEur(item.saving)}/month</div>
+      </div>
+    </div>`).join('');
 }
 
 function renderProgress() {
