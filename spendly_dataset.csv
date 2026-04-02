@@ -119,3 +119,51 @@ R117,prod-email-service,2024-12,SES Service,production,42,stable,28,32,18600,202
 R118,prod-email-service,2025-01,SES Service,production,42,stable,30,34,19200,2025-01-31,23.5,155,no,yes
 R119,prod-email-service,2025-02,SES Service,production,42,stable,29,33,18800,2025-02-28,23.5,185,no,yes
 R120,prod-email-service,2025-03,SES Service,production,43,rising,31,35,19500,2025-03-31,23.5,215,no,yes
+R121,prod-data-warehouse,2024-10,Redshift Cluster,production,480,stable,57,62,12400,2025-03-31,23.5,180,no,yes
+R122,prod-data-warehouse,2024-11,Redshift Cluster,production,480,stable,58,62,12400,2025-03-31,23.5,210,no,yes
+R123,prod-data-warehouse,2024-12,Redshift Cluster,production,480,stable,59,62,12400,2025-03-31,23.5,240,no,yes
+R124,prod-data-warehouse,2025-01,Redshift Cluster,production,480,stable,57,62,12400,2025-03-31,23.5,270,no,yes
+R125,prod-data-warehouse,2025-02,Redshift Cluster,production,480,stable,60,62,12400,2025-03-31,23.5,300,no,yes
+R126,prod-data-warehouse,2025-03,Redshift Cluster,production,480,stable,59,62,12400,2025-03-31,23.5,330,no,yes
+R127,prod-search-service,2024-10,Elasticsearch,production,310,stable,51,68,28900,2025-03-31,24.0,180,no,yes
+R128,prod-search-service,2024-11,Elasticsearch,production,310,stable,52,68,28900,2025-03-31,24.0,210,no,yes
+R129,prod-search-service,2024-12,Elasticsearch,production,310,stable,53,68,28900,2025-03-31,24.0,240,no,yes
+R130,prod-search-service,2025-01,Elasticsearch,production,310,stable,51,68,28900,2025-03-31,24.0,270,no,yes
+R131,prod-search-service,2025-02,Elasticsearch,production,310,stable,54,68,28900,2025-03-31,24.0,300,no,yes
+R132,prod-search-service,2025-03,Elasticsearch,production,310,stable,53,68,28900,2025-03-31,24.0,330,no,yes
+R133,prod-queue-service,2024-10,SQS + Lambda,production,145,rising,37,42,95000,2025-03-31,24.0,180,no,yes
+R134,prod-queue-service,2024-11,SQS + Lambda,production,145,rising,38,42,95500,2025-03-31,24.0,210,no,yes
+R135,prod-queue-service,2024-12,SQS + Lambda,production,150,rising,39,42,96000,2025-03-31,24.0,240,no,yes
+R136,prod-queue-service,2025-01,SQS + Lambda,production,150,rising,37,42,96500,2025-03-31,24.0,270,no,yes
+R137,prod-queue-service,2025-02,SQS + Lambda,production,155,rising,40,42,97000,2025-03-31,24.0,300,no,yes
+R138,prod-queue-service,2025-03,SQS + Lambda,production,155,rising,39,42,97500,2025-03-31,24.0,330,no,yes
+R139,prod-auth-service,2024-10,EC2 Instance,production,220,stable,60,55,34200,2025-03-31,23.8,180,no,yes
+R140,prod-auth-service,2024-11,EC2 Instance,production,220,stable,61,55,34200,2025-03-31,23.8,210,no,yes
+R141,prod-auth-service,2024-12,EC2 Instance,production,220,stable,62,55,34200,2025-03-31,23.8,240,no,yes
+R142,prod-auth-service,2025-01,EC2 Instance,production,220,stable,60,55,34200,2025-03-31,23.8,270,no,yes
+R143,prod-auth-service,2025-02,EC2 Instance,production,220,stable,63,55,34200,2025-03-31,23.8,300,no,yes
+R144,prod-auth-service,2025-03,EC2 Instance,production,220,stable,62,55,34200,2025-03-31,23.8,330,no,yes
+R145,prod-backup-service,2024-10,S3 + Glacier,production,88,stable,11,18,2100,2025-03-31,24.0,180,no,yes
+R146,prod-backup-service,2024-11,S3 + Glacier,production,88,stable,12,18,2100,2025-03-31,24.0,210,no,yes
+R147,prod-backup-service,2024-12,S3 + Glacier,production,88,stable,13,18,2100,2025-03-31,24.0,240,no,yes
+R148,prod-backup-service,2025-01,S3 + Glacier,production,88,stable,11,18,2100,2025-03-31,24.0,270,no,yes
+R149,prod-backup-service,2025-02,S3 + Glacier,production,88,stable,14,18,2100,2025-03-31,24.0,300,no,yes
+R150,prod-backup-service,2025-03,S3 + Glacier,production,88,stable,13,18,2100,2025-03-31,24.0,330,no,yes
+R151,prod-analytics-pipeline,2024-10,EC2 Instance,production,265,rising,66,71,18700,2025-03-31,22.0,180,no,yes
+R152,prod-analytics-pipeline,2024-11,EC2 Instance,production,265,rising,67,71,19200,2025-03-31,22.0,210,no,yes
+R153,prod-analytics-pipeline,2024-12,EC2 Instance,production,270,rising,68,71,19700,2025-03-31,22.0,240,no,yes
+R154,prod-analytics-pipeline,2025-01,EC2 Instance,production,270,rising,66,71,20200,2025-03-31,22.0,270,no,yes
+R155,prod-analytics-pipeline,2025-02,EC2 Instance,production,275,rising,69,71,20700,2025-03-31,22.0,300,no,yes
+R156,prod-analytics-pipeline,2025-03,EC2 Instance,production,275,rising,68,71,21200,2025-03-31,22.0,330,no,yes
+R157,prod-notification-svc,2024-10,SNS + SES,production,62,stable,28,31,44000,2025-03-31,24.0,180,no,yes
+R158,prod-notification-svc,2024-11,SNS + SES,production,62,stable,29,31,44000,2025-03-31,24.0,210,no,yes
+R159,prod-notification-svc,2024-12,SNS + SES,production,62,stable,30,31,44000,2025-03-31,24.0,240,no,yes
+R160,prod-notification-svc,2025-01,SNS + SES,production,62,stable,28,31,44000,2025-03-31,24.0,270,no,yes
+R161,prod-notification-svc,2025-02,SNS + SES,production,62,stable,31,31,44000,2025-03-31,24.0,300,no,yes
+R162,prod-notification-svc,2025-03,SNS + SES,production,62,stable,30,31,44000,2025-03-31,24.0,330,no,yes
+R163,prod-file-storage,2024-10,S3 Standard,production,124,stable,13,18,8900,2025-03-31,24.0,180,no,yes
+R164,prod-file-storage,2024-11,S3 Standard,production,124,stable,14,18,8900,2025-03-31,24.0,210,no,yes
+R165,prod-file-storage,2024-12,S3 Standard,production,124,stable,15,18,8900,2025-03-31,24.0,240,no,yes
+R166,prod-file-storage,2025-01,S3 Standard,production,124,stable,13,18,8900,2025-03-31,24.0,270,no,yes
+R167,prod-file-storage,2025-02,S3 Standard,production,124,stable,16,18,8900,2025-03-31,24.0,300,no,yes
+R168,prod-file-storage,2025-03,S3 Standard,production,124,stable,15,18,8900,2025-03-31,24.0,330,no,yes
